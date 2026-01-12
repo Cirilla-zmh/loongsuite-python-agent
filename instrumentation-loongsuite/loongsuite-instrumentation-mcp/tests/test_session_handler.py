@@ -34,35 +34,35 @@ async def test_client_invalid(tracer_provider):
     stdio_client_backup = mcp.client.stdio.stdio_client
     websocket_client_backup = mcp.client.websocket.websocket_client
     sse_client_backup = mcp.client.sse.sse_client
-    streamablehttp_client_backup = (
-        mcp.client.streamable_http.streamablehttp_client
+    streamable_http_client_backup = (
+        mcp.client.streamable_http.streamable_http_client
     )
 
     mcp.client.stdio.stdio_client = mock_client
     mcp.client.websocket.websocket_client = mock_client
     mcp.client.sse.sse_client = mock_client
-    mcp.client.streamable_http.streamablehttp_client = mock_client
+    mcp.client.streamable_http.streamable_http_client = mock_client
 
     mcp_instrumentor = MCPInstrumentor()
     mcp_instrumentor._instrument(tracer_provider=tracer_provider)
     from mcp.client.sse import sse_client  # noqa: PLC0415
     from mcp.client.stdio import stdio_client  # noqa: PLC0415
     from mcp.client.streamable_http import (  # noqa: PLC0415
-        streamablehttp_client,
+        streamable_http_client,
     )
     from mcp.client.websocket import websocket_client  # noqa: PLC0415
 
     assert isinstance(stdio_client, FunctionWrapper)
     assert isinstance(websocket_client, FunctionWrapper)
     assert isinstance(sse_client, FunctionWrapper)
-    assert isinstance(streamablehttp_client, FunctionWrapper)
+    assert isinstance(streamable_http_client, FunctionWrapper)
 
     # ensure no exception is raised, and result is as expected
     for testure in [
         stdio_client,
         websocket_client,
         sse_client,
-        streamablehttp_client,
+        streamable_http_client,
     ]:
         async with testure(None) as result:
             assert result is None
@@ -82,8 +82,8 @@ async def test_client_invalid(tracer_provider):
     mcp.client.stdio.stdio_client = stdio_client_backup
     mcp.client.websocket.websocket_client = websocket_client_backup
     mcp.client.sse.sse_client = sse_client_backup
-    mcp.client.streamable_http.streamablehttp_client = (
-        streamablehttp_client_backup
+    mcp.client.streamable_http.streamable_http_client = (
+        streamable_http_client_backup
     )
 
 

@@ -38,7 +38,7 @@ def test_instrument(tracer_provider):
     assert isinstance(ClientSession.call_tool, BoundFunctionWrapper)
     assert isinstance(mcp.client.sse.sse_client, FunctionWrapper)
     assert isinstance(
-        mcp.client.streamable_http.streamablehttp_client, FunctionWrapper
+        mcp.client.streamable_http.streamable_http_client, FunctionWrapper
     )
     assert isinstance(mcp.client.stdio.stdio_client, FunctionWrapper)
     assert isinstance(mcp.client.websocket.websocket_client, FunctionWrapper)
@@ -62,7 +62,7 @@ def test_instrument(tracer_provider):
     assert not isinstance(ClientSession.call_tool, BoundFunctionWrapper)
     assert not isinstance(mcp.client.sse.sse_client, FunctionWrapper)
     assert not isinstance(
-        mcp.client.streamable_http.streamablehttp_client, FunctionWrapper
+        mcp.client.streamable_http.streamable_http_client, FunctionWrapper
     )
     assert not isinstance(mcp.client.stdio.stdio_client, FunctionWrapper)
     assert not isinstance(
