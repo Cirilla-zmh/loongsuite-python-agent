@@ -3,7 +3,9 @@ from typing import Collection
 from wrapt import BoundFunctionWrapper, FunctionWrapper, wrap_function_wrapper
 
 from opentelemetry.instrumentation.mcp import MCPInstrumentor
-from opentelemetry.instrumentation.mcp.utils import _get_streamable_http_client_name
+from opentelemetry.instrumentation.mcp.utils import (
+    _get_streamable_http_client_name,
+)
 from opentelemetry.instrumentation.utils import unwrap
 
 

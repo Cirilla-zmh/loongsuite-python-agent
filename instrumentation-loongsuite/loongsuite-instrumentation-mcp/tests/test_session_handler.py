@@ -11,7 +11,9 @@ from wrapt import FunctionWrapper
 from opentelemetry import context, propagate
 from opentelemetry import trace as trace_api
 from opentelemetry.instrumentation.mcp import MCPInstrumentor, ServerMetrics
-from opentelemetry.instrumentation.mcp.utils import _get_streamable_http_client_name
+from opentelemetry.instrumentation.mcp.utils import (
+    _get_streamable_http_client_name,
+)
 from opentelemetry.metrics import get_meter
 from opentelemetry.trace import SpanKind
 
@@ -54,6 +56,7 @@ async def test_client_invalid(tracer_provider):
     mcp_instrumentor._instrument(tracer_provider=tracer_provider)
     from mcp.client.sse import sse_client  # noqa: PLC0415
     from mcp.client.stdio import stdio_client  # noqa: PLC0415
+
     streamable_http_client = getattr(
         mcp.client.streamable_http, streamable_http_client_name
     )

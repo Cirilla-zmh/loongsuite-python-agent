@@ -1,5 +1,7 @@
 """Pytest configuration file to make fixtures available to all tests."""
+
 import pytest
+
 from opentelemetry import metrics as metrics_api
 from opentelemetry import trace as trace_api
 from opentelemetry.sdk.metrics import MeterProvider
@@ -114,9 +116,9 @@ def find_span(memory_exporter):
 def mcp_server_factory():
     """Factory fixture for creating FastMCP server instances."""
     # Import dependencies inside fixture to avoid import errors for tests that don't need it
-    from fastmcp import FastMCP
-    from mcp.server.fastmcp import Image
-    from PIL import Image as PILImage
+    from fastmcp import FastMCP  # noqa: PLC0415
+    from mcp.server.fastmcp import Image  # noqa: PLC0415
+    from PIL import Image as PILImage  # noqa: PLC0415
 
     def create_fastmcp_server(name: str = "TestServer"):
         mcp = FastMCP(name)
