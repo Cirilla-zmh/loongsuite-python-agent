@@ -39,7 +39,7 @@ def do_instrument():
 def create_fastmcp_server():
     mcp = FastMCP("testServer")
 
-    @mcp.tool
+    @mcp.tool()
     def greet(name: str) -> str:
         return f"Hello, {name}!"
 
@@ -51,7 +51,7 @@ def create_fastmcp_server():
     def get_image():
         return Image(data=b"asdsadsa????sdsads", format="png")
 
-    @mcp.tool
+    @mcp.tool()
     def get_server_span() -> str:
         current_span = trace.get_current_span()
         assert current_span is not None
@@ -64,7 +64,7 @@ def create_fastmcp_server():
         # Fetch profile for user_id...
         return {"name": f"User {user_id}", "status": "active"}
 
-    @mcp.prompt
+    @mcp.prompt()
     def summarize_request(text: str) -> str:
         """Generate a prompt asking for a summary."""
         return f"Please summarize the following text:\n\n{text}"

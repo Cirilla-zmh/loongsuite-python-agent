@@ -3,6 +3,7 @@ from typing import Collection
 from wrapt import BoundFunctionWrapper, FunctionWrapper, wrap_function_wrapper
 
 from opentelemetry.instrumentation.mcp import MCPInstrumentor
+from opentelemetry.instrumentation.mcp.utils import _get_streamable_http_client_name
 from opentelemetry.instrumentation.utils import unwrap
 
 
@@ -37,8 +38,10 @@ def test_instrument(tracer_provider):
     assert isinstance(ClientSession.unsubscribe_resource, BoundFunctionWrapper)
     assert isinstance(ClientSession.call_tool, BoundFunctionWrapper)
     assert isinstance(mcp.client.sse.sse_client, FunctionWrapper)
+    streamable_http_client_name = _get_streamable_http_client_name()
     assert isinstance(
-        mcp.client.streamable_http.streamable_http_client, FunctionWrapper
+        getattr(mcp.client.streamable_http, streamable_http_client_name),
+        FunctionWrapper,
     )
     assert isinstance(mcp.client.stdio.stdio_client, FunctionWrapper)
     assert isinstance(mcp.client.websocket.websocket_client, FunctionWrapper)
@@ -61,8 +64,10 @@ def test_instrument(tracer_provider):
     )
     assert not isinstance(ClientSession.call_tool, BoundFunctionWrapper)
     assert not isinstance(mcp.client.sse.sse_client, FunctionWrapper)
+    streamable_http_client_name = _get_streamable_http_client_name()
     assert not isinstance(
-        mcp.client.streamable_http.streamable_http_client, FunctionWrapper
+        getattr(mcp.client.streamable_http, streamable_http_client_name),
+        FunctionWrapper,
     )
     assert not isinstance(mcp.client.stdio.stdio_client, FunctionWrapper)
     assert not isinstance(

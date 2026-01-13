@@ -11,15 +11,7 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
     InMemorySpanExporter,
 )
 
-# Import optional dependencies for mcp_server_factory fixture
-try:
-    from fastmcp import FastMCP
-    from mcp.server.fastmcp import Image
-    from PIL import Image as PILImage
-
-    HAS_MCP_DEPS = True
-except ImportError:
-    HAS_MCP_DEPS = False
+# Dependencies for mcp_server_factory fixture will be imported inside the fixture
 
 # Try to import reset functions from opentelemetry.test, fallback to manual implementation
 try:
@@ -121,13 +113,15 @@ def find_span(memory_exporter):
 @pytest.fixture
 def mcp_server_factory():
     """Factory fixture for creating FastMCP server instances."""
-    if not HAS_MCP_DEPS:
-        pytest.skip("fastmcp and PIL are required for mcp_server_factory fixture")
+    # Import dependencies inside fixture to avoid import errors for tests that don't need it
+    from fastmcp import FastMCP
+    from mcp.server.fastmcp import Image
+    from PIL import Image as PILImage
 
     def create_fastmcp_server(name: str = "TestServer"):
         mcp = FastMCP(name)
 
-        @mcp.tool
+        @mcp.tool()
         def greet(name: str) -> str:
             return f"Hello, {name}!"
 
@@ -135,7 +129,7 @@ def mcp_server_factory():
         def get_version():
             return "2.0.1"
 
-        @mcp.tool("get_image")
+        @mcp.tool()
         def get_image() -> Image:
             img = PILImage.new("RGB", (100, 100), color=(155, 0, 0))
             return Image(data=img.tobytes(), format="png")
@@ -145,7 +139,7 @@ def mcp_server_factory():
             # Fetch profile for user_id...
             return {"name": f"User {user_id}", "status": "active"}
 
-        @mcp.prompt
+        @mcp.prompt()
         def summarize_request(text: str) -> str:
             """Generate a prompt asking for a summary."""
             return f"Please summarize the following text:\n\n{text}"

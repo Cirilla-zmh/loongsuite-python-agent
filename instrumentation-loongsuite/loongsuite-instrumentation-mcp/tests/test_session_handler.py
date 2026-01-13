@@ -11,6 +11,7 @@ from wrapt import FunctionWrapper
 from opentelemetry import context, propagate
 from opentelemetry import trace as trace_api
 from opentelemetry.instrumentation.mcp import MCPInstrumentor, ServerMetrics
+from opentelemetry.instrumentation.mcp.utils import _get_streamable_http_client_name
 from opentelemetry.metrics import get_meter
 from opentelemetry.trace import SpanKind
 
@@ -31,24 +32,30 @@ async def test_client_invalid(tracer_provider):
     import mcp.client.streamable_http  # noqa: PLC0415
     import mcp.client.websocket  # noqa: PLC0415
 
+    streamable_http_client_name = _get_streamable_http_client_name()
+
     stdio_client_backup = mcp.client.stdio.stdio_client
     websocket_client_backup = mcp.client.websocket.websocket_client
     sse_client_backup = mcp.client.sse.sse_client
-    streamable_http_client_backup = (
-        mcp.client.streamable_http.streamable_http_client
+    streamable_http_client_backup = getattr(
+        mcp.client.streamable_http, streamable_http_client_name
     )
 
     mcp.client.stdio.stdio_client = mock_client
     mcp.client.websocket.websocket_client = mock_client
     mcp.client.sse.sse_client = mock_client
-    mcp.client.streamable_http.streamable_http_client = mock_client
+    setattr(
+        mcp.client.streamable_http,
+        streamable_http_client_name,
+        mock_client,
+    )
 
     mcp_instrumentor = MCPInstrumentor()
     mcp_instrumentor._instrument(tracer_provider=tracer_provider)
     from mcp.client.sse import sse_client  # noqa: PLC0415
     from mcp.client.stdio import stdio_client  # noqa: PLC0415
-    from mcp.client.streamable_http import (  # noqa: PLC0415
-        streamable_http_client,
+    streamable_http_client = getattr(
+        mcp.client.streamable_http, streamable_http_client_name
     )
     from mcp.client.websocket import websocket_client  # noqa: PLC0415
 
@@ -82,8 +89,10 @@ async def test_client_invalid(tracer_provider):
     mcp.client.stdio.stdio_client = stdio_client_backup
     mcp.client.websocket.websocket_client = websocket_client_backup
     mcp.client.sse.sse_client = sse_client_backup
-    mcp.client.streamable_http.streamable_http_client = (
-        streamable_http_client_backup
+    setattr(
+        mcp.client.streamable_http,
+        streamable_http_client_name,
+        streamable_http_client_backup,
     )
 
 

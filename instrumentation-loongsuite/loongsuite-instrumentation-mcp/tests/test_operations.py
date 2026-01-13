@@ -1,6 +1,6 @@
 import pytest
 from fastmcp import Client
-from fastmcp.exceptions import ToolError
+from fastmcp.exceptions import ClientError, ToolError
 from mcp.shared.exceptions import McpError
 from mcp.types import (
     LATEST_PROTOCOL_VERSION,
@@ -182,9 +182,14 @@ async def test_get_prompt(mcp_server, memory_exporter, find_span):
         result = await client.get_prompt(
             "summarize_request", {"text": "Hello, World!"}
         )
-        assert isinstance(result.messages[0].content, TextContent)
+        # Handle both old API (result.messages) and new API (result is list)
+        if hasattr(result, "messages"):
+            messages = result.messages
+        else:
+            messages = result
+        assert isinstance(messages[0].content, TextContent)
         assert (
-            result.messages[0].content.text
+            messages[0].content.text
             == "Please summarize the following text:\n\nHello, World!"
         )
         spans = memory_exporter.get_finished_spans()
@@ -202,8 +207,13 @@ async def test_get_prompt(mcp_server, memory_exporter, find_span):
             get_prompt_span.attributes["mcp.prompt.name"]
             == "summarize_request"
         )
+        # Handle both old API (result.messages) and new API (result is list)
+        if hasattr(result, "messages"):
+            content_text = result.messages[0].content.text
+        else:
+            content_text = result[0].content.text
         assert int(get_prompt_span.attributes["mcp.output.size"]) == len(
-            result.messages[0].content.text
+            content_text
         )
 
 
@@ -294,8 +304,8 @@ async def test_call_tool_name_invalid(mcp_server, memory_exporter, find_span):
 @pytest.mark.asyncio
 async def test_call_tool_not_exists(mcp_server, memory_exporter, find_span):
     async with Client(mcp_server) as client:
-        # FIXME: ruff failed
-        with pytest.raises(ToolError) as exc_info:  # noqa: F841
+        # Handle both ToolError (old API) and ClientError (new API)
+        with pytest.raises((ToolError, ClientError)) as exc_info:  # noqa: F841
             await client.call_tool("hello", {"name": "World"})  # type: ignore
         spans = memory_exporter.get_finished_spans()
         assert len(spans) >= 2
