@@ -14,6 +14,7 @@
 
 """VCR configuration for Google GenAI SDK integration tests."""
 
+import json
 import re
 from pathlib import Path
 
@@ -22,6 +23,11 @@ import pytest
 _CASSETTES = Path(__file__).parent / "cassettes"
 _THOUGHT_SIGNATURE = re.compile(
     rb'("(?:thoughtSignature|thought_signature|signature)"\s*:\s*")[^"]+(")'
+)
+_RESULT_SCHEMA_KEYS = ("response_json_schema", "responseJsonSchema")
+_PARAMETER_SCHEMA_KEYS = (
+    "parameters_json_schema",
+    "parametersJsonSchema",
 )
 
 
@@ -37,8 +43,105 @@ def _scrub_body(value):
     return value
 
 
+def _normalize_json_schema(value):
+    """Normalize type spellings inside an SDK-generated JSON Schema."""
+    if isinstance(value, dict):
+        normalized = {}
+        for key, nested in value.items():
+            normalized_value = _normalize_json_schema(nested)
+            # google-genai 2.23 switched generated JSON Schema type values
+            # from the API's uppercase spelling to standard lowercase.
+            if (
+                key == "type"
+                and isinstance(nested, str)
+                and nested.upper()
+                in {
+                    "ARRAY",
+                    "BOOLEAN",
+                    "INTEGER",
+                    "NUMBER",
+                    "OBJECT",
+                    "STRING",
+                }
+            ):
+                normalized_value = nested.lower()
+            normalized[key] = normalized_value
+        return normalized
+    if isinstance(value, list):
+        return [_normalize_json_schema(item) for item in value]
+    return value
+
+
+def _normalize_function_declaration(declaration):
+    """Normalize schema aliases while preserving declaration semantics."""
+    if not isinstance(declaration, dict):
+        return declaration
+    normalized = dict(declaration)
+
+    parameters = normalized.get("parameters")
+    for key in _PARAMETER_SCHEMA_KEYS:
+        if key in normalized:
+            parameters = normalized.pop(key)
+    if parameters is not None:
+        normalized["parameters"] = _normalize_json_schema(parameters)
+
+    response_schema = None
+    has_response_schema = False
+    for key in _RESULT_SCHEMA_KEYS:
+        if key in normalized:
+            response_schema = normalized.pop(key)
+            has_response_schema = True
+    if has_response_schema:
+        normalized["response_json_schema"] = _normalize_json_schema(
+            response_schema
+        )
+    return normalized
+
+
+def _normalize_generated_function_schemas(payload):
+    """Normalize generated declarations without touching user configuration."""
+    if not isinstance(payload, dict):
+        return payload
+    normalized = dict(payload)
+    tools = normalized.get("tools")
+    if not isinstance(tools, list):
+        return normalized
+
+    normalized_tools = []
+    for tool in tools:
+        if not isinstance(tool, dict):
+            normalized_tools.append(tool)
+            continue
+        normalized_tool = dict(tool)
+        declarations = normalized_tool.get("functionDeclarations")
+        if isinstance(declarations, list):
+            normalized_tool["functionDeclarations"] = [
+                _normalize_function_declaration(declaration)
+                for declaration in declarations
+            ]
+        normalized_tools.append(normalized_tool)
+    normalized["tools"] = normalized_tools
+    return normalized
+
+
+def _normalize_request_body(value):
+    """Canonicalize JSON requests while retaining exact semantic matching."""
+    scrubbed = _scrub_body(value)
+    is_bytes = isinstance(scrubbed, bytes)
+    try:
+        payload = json.loads(scrubbed)
+    except (TypeError, ValueError):
+        return scrubbed
+    canonical = json.dumps(
+        _normalize_generated_function_schemas(payload),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return canonical.encode() if is_bytes else canonical
+
+
 def _scrub_request(request):
-    request.body = _scrub_body(request.body)
+    request.body = _normalize_request_body(request.body)
     return request
 
 
@@ -62,6 +165,12 @@ def _scrub_response(response):
 @pytest.fixture(scope="module")
 def vcr_cassette_dir():
     return str(_CASSETTES)
+
+
+@pytest.fixture
+def vcr_request_body_normalizer():
+    """Expose request normalization for focused regression coverage."""
+    return _normalize_request_body
 
 
 @pytest.fixture(scope="module")
