@@ -126,9 +126,7 @@ def make_execute_shell_command_wrapper() -> Callable[..., Any]:
         del instance
         command = str(args[0]) if args else str(kwargs.get("command", ""))
         timeout = (
-            int(args[1])
-            if len(args) >= 2
-            else int(kwargs.get("timeout", 300))
+            int(args[1]) if len(args) >= 2 else int(kwargs.get("timeout", 300))
         )
         if not should_inject_trace_for_shell_command(command):
             return await wrapped(*args, **kwargs)

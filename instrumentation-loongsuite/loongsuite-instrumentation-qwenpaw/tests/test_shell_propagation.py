@@ -19,7 +19,9 @@ from opentelemetry.instrumentation.qwenpaw._shell_patch import (
 
 def test_should_inject_for_supported_agent_chat_commands():
     assert should_inject_trace_for_shell_command("copaw agents chat -m hello")
-    assert should_inject_trace_for_shell_command("qwenpaw agents chat -m hello")
+    assert should_inject_trace_for_shell_command(
+        "qwenpaw agents chat -m hello"
+    )
     assert not should_inject_trace_for_shell_command("ls -la")
     assert not should_inject_trace_for_shell_command("copaw app")
 

@@ -25,11 +25,11 @@ from opentelemetry.propagators.textmap import Getter, Setter
 
 class EnvironmentGetter(Getter[Mapping[str, str]]):
     def __init__(self) -> None:
-        self.carrier = {key.lower(): value for key, value in os.environ.items()}
+        self.carrier = {
+            key.lower(): value for key, value in os.environ.items()
+        }
 
-    def get(
-        self, carrier: Mapping[str, str], key: str
-    ) -> Optional[list[str]]:
+    def get(self, carrier: Mapping[str, str], key: str) -> Optional[list[str]]:
         del carrier
         value = self.carrier.get(key.lower())
         return None if value is None else [value]
